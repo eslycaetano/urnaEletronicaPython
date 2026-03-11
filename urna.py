@@ -35,31 +35,38 @@ ARQUIVO_JSON    = "eleicoes.json"
 PASTA_FOTOS     = "fotos"
 SENHA_ADMIN     = "14022004"
 
-# Paleta de cores
-COR_FUNDO       = "#0D1117"   # fundo escuro geral
-COR_PAINEL      = "#161B22"   # fundo de cards
-COR_BORDA       = "#30363D"   # bordas sutis
-COR_TEXTO       = "#E6EDF3"   # texto principal
-COR_TEXTO2      = "#8B949E"   # texto secundário
-COR_VERDE       = "#3FB950"   # confirmação / aberta
-COR_VERDE_ESCURO= "#238636"   # botão confirmar
-COR_VERMELHO    = "#F85149"   # erro / encerrada
-COR_AZUL        = "#388BFD"   # botão primário
-COR_AZUL_ESCURO = "#1F6FEB"   # hover botão primário
-COR_AMARELO     = "#D29922"   # destaque / vencedor
-COR_CINZA       = "#21262D"   # botão secundário
-COR_CINZA2      = "#2D333B"   # hover secundário
-COR_DISPLAY     = "#010409"   # visor da urna
-COR_NUMERO      = "#3FB950"   # dígitos no visor
+# Família de fontes (usa a primeira disponível no SO)
+_FONT_FAMILY   = "Segoe UI"   # Windows — cai para Helvetica/Arial no Linux/Mac
+_FONT_MONO     = "Consolas"    # monoespaçada para visor da urna
 
-FONTE_TITULO    = ("Courier New", 22, "bold")
-FONTE_SUBTITULO = ("Courier New", 14, "bold")
-FONTE_NORMAL    = ("Courier New", 11)
-FONTE_PEQUENA   = ("Courier New", 9)
-FONTE_DISPLAY   = ("Courier New", 36, "bold")
-FONTE_BOTAO_NUM = ("Courier New", 18, "bold")
-FONTE_BOTAO     = ("Courier New", 11, "bold")
-FONTE_STATUS    = ("Courier New", 10, "bold")
+# Paleta de cores — tom escuro com acentos vibrantes
+COR_FUNDO       = "#0F1318"   # fundo escuro geral
+COR_PAINEL      = "#181E26"   # fundo de cards
+COR_BORDA       = "#2A3140"   # bordas sutis
+COR_TEXTO       = "#E8ECF1"   # texto principal
+COR_TEXTO2      = "#7E8A9A"   # texto secundário
+COR_VERDE       = "#43D058"   # confirmação / aberta
+COR_VERDE_ESCURO= "#28A745"   # botão confirmar
+COR_VERMELHO    = "#F44747"   # erro / encerrada
+COR_AZUL        = "#4C9EFF"   # botão primário
+COR_AZUL_ESCURO = "#2979E4"   # hover botão primário
+COR_AMARELO     = "#FFBF00"   # destaque / vencedor
+COR_CINZA       = "#232A34"   # botão secundário
+COR_CINZA2      = "#313B4A"   # hover secundário
+COR_DISPLAY     = "#010409"   # visor da urna
+COR_NUMERO      = "#43D058"   # dígitos no visor
+COR_HEADER_BG   = "#141920"   # fundo do cabeçalho
+COR_LARANJA     = "#FF8C00"   # botão corrigir (urna real)
+COR_BRANCO_BTN  = "#F0F0F0"   # teclas numéricas (urna real)
+
+FONTE_TITULO    = (_FONT_FAMILY, 24, "bold")
+FONTE_SUBTITULO = (_FONT_FAMILY, 14, "bold")
+FONTE_NORMAL    = (_FONT_FAMILY, 11)
+FONTE_PEQUENA   = (_FONT_FAMILY, 9)
+FONTE_DISPLAY   = (_FONT_MONO, 42, "bold")
+FONTE_BOTAO_NUM = (_FONT_FAMILY, 16, "bold")
+FONTE_BOTAO     = (_FONT_FAMILY, 11, "bold")
+FONTE_STATUS    = (_FONT_FAMILY, 10, "bold")
 
 
 # ════════════════════════════════════════════════════════════════
@@ -256,16 +263,34 @@ def _carregar_foto(caminho: str, tamanho: tuple[int, int] = (80, 80)):
 # ════════════════════════════════════════════════════════════════
 #  HELPERS DE UI
 # ════════════════════════════════════════════════════════════════
+def _hover(widget, cor_normal, cor_hover):
+    """Adiciona efeito hover num widget."""
+    widget.bind("<Enter>", lambda e: widget.config(bg=cor_hover))
+    widget.bind("<Leave>", lambda e: widget.config(bg=cor_normal))
+
+
 def btn(parent, texto, comando, cor=COR_AZUL, largura=22, altura=2, fonte=FONTE_BOTAO):
-    """Fábrica de botões com estilo padrão."""
+    """Fábrica de botões com estilo padrão e hover."""
+    # Calcula cor de hover (levemente mais clara)
+    hover_map = {
+        COR_AZUL: COR_AZUL_ESCURO,
+        COR_VERDE_ESCURO: "#2FC24E",
+        COR_CINZA: COR_CINZA2,
+        COR_VERMELHO: "#D83B3B",
+        COR_AMARELO: "#E0A800",
+        "#8957e5": "#7340C9",
+        "#6E0D0D": "#8B1A1A",
+    }
+    hover_cor = hover_map.get(cor, COR_AZUL_ESCURO)
     b = tk.Button(
         parent, text=texto, command=comando,
         bg=cor, fg=COR_TEXTO, font=fonte,
         width=largura, height=altura,
         relief="flat", cursor="hand2",
-        activebackground=COR_AZUL_ESCURO, activeforeground=COR_TEXTO,
-        bd=0, padx=8
+        activebackground=hover_cor, activeforeground=COR_TEXTO,
+        bd=0, padx=12, pady=4
     )
+    _hover(b, cor, hover_cor)
     return b
 
 
@@ -287,9 +312,12 @@ def card(parent, pad=16):
 
 def rodape(parent):
     """Rodapé padrão com créditos."""
-    tk.Label(parent, text="Desenvolvido em 1 dia por Esly Caetano 🥸",
-             font=FONTE_PEQUENA, fg=COR_TEXTO2, bg=COR_FUNDO
-             ).pack(side="bottom", pady=6)
+    fr = tk.Frame(parent, bg=COR_FUNDO)
+    fr.pack(side="bottom", fill="x")
+    separador(fr, cor=COR_BORDA).pack(fill="x")
+    tk.Label(fr, text="Desenvolvido por Esly Caetano",
+             font=(_FONT_FAMILY, 8), fg=COR_TEXTO2, bg=COR_FUNDO
+             ).pack(pady=5)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -305,15 +333,15 @@ class App:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Urna Escolar — Sistema de Votação")
-        self.root.geometry("900x680")
-        self.root.minsize(800, 600)
+        self.root.geometry("960x720")
+        self.root.minsize(860, 640)
         self.root.configure(bg=COR_FUNDO)
 
         # Centraliza a janela na tela
         self.root.update_idletasks()
-        x = (self.root.winfo_screenwidth()  - 900) // 2
-        y = (self.root.winfo_screenheight() - 680) // 2
-        self.root.geometry(f"900x680+{x}+{y}")
+        x = (self.root.winfo_screenwidth()  - 960) // 2
+        y = (self.root.winfo_screenheight() - 720) // 2
+        self.root.geometry(f"960x720+{x}+{y}")
 
         self._tela_atual = None
         self.ir_para_tela_inicial()
@@ -364,31 +392,33 @@ class TelaInicial(tk.Frame):
 
     def _construir(self):
         # ── Cabeçalho ──────────────────────────────────────────
-        cab = tk.Frame(self, bg=COR_PAINEL,
-                       highlightbackground=COR_BORDA, highlightthickness=1)
-        cab.pack(fill="x", padx=0, pady=0)
+        cab = tk.Frame(self, bg=COR_HEADER_BG)
+        cab.pack(fill="x")
 
-        tk.Label(cab, text="🗳  URNA ESCOLAR",
-                 font=FONTE_TITULO, fg=COR_VERDE, bg=COR_PAINEL
-                 ).pack(pady=(18, 2))
+        cab_inner = tk.Frame(cab, bg=COR_HEADER_BG)
+        cab_inner.pack(fill="x", padx=32, pady=(22, 18))
 
-        tk.Label(cab, text="Sistema de Votação — Eleições de Turma",
-                 font=FONTE_PEQUENA, fg=COR_TEXTO2, bg=COR_PAINEL
-                 ).pack(pady=(0, 14))
+        tk.Label(cab_inner, text="🗳  URNA ESCOLAR",
+                 font=(_FONT_FAMILY, 26, "bold"), fg=COR_VERDE, bg=COR_HEADER_BG
+                 ).pack(side="left")
+
+        tk.Label(cab_inner, text="Sistema de Votação Escolar",
+                 font=(_FONT_FAMILY, 11), fg=COR_TEXTO2, bg=COR_HEADER_BG
+                 ).pack(side="left", padx=(16, 0), pady=(8, 0))
+
+        separador(cab, cor=COR_VERDE).pack(fill="x")
 
         # ── Corpo ───────────────────────────────────────────────
         corpo = tk.Frame(self, bg=COR_FUNDO)
-        corpo.pack(fill="both", expand=True, padx=24, pady=16)
+        corpo.pack(fill="both", expand=True, padx=28, pady=18)
 
         # Coluna esquerda: lista de eleições
         esq = tk.Frame(corpo, bg=COR_FUNDO)
-        esq.pack(side="left", fill="both", expand=True, padx=(0, 16))
+        esq.pack(side="left", fill="both", expand=True, padx=(0, 14))
 
-        tk.Label(esq, text="ELEIÇÕES CADASTRADAS",
-                 font=FONTE_SUBTITULO, fg=COR_TEXTO2, bg=COR_FUNDO
-                 ).pack(anchor="w", pady=(0, 8))
-
-        separador(esq).pack(fill="x", pady=4)
+        lbl_titulo = tk.Label(esq, text="ELEIÇÕES CADASTRADAS",
+                 font=(_FONT_FAMILY, 11, "bold"), fg=COR_TEXTO2, bg=COR_FUNDO)
+        lbl_titulo.pack(anchor="w", pady=(0, 10))
 
         # Frame com scroll para a lista
         container = tk.Frame(esq, bg=COR_FUNDO)
@@ -412,25 +442,26 @@ class TelaInicial(tk.Frame):
         self._popular_lista()
 
         # Coluna direita: botões de ação
-        dir_ = tk.Frame(corpo, bg=COR_FUNDO, width=220)
-        dir_.pack(side="right", fill="y", padx=(16, 0))
+        dir_ = tk.Frame(corpo, bg=COR_FUNDO, width=240)
+        dir_.pack(side="right", fill="y", padx=(14, 0))
         dir_.pack_propagate(False)
 
-        tk.Label(dir_, text="AÇÕES",
-                 font=FONTE_SUBTITULO, fg=COR_TEXTO2, bg=COR_FUNDO
-                 ).pack(anchor="w", pady=(0, 8))
+        dir_card = card(dir_)
+        dir_card.pack(fill="x", pady=(0, 10))
 
-        separador(dir_).pack(fill="x", pady=4)
+        tk.Label(dir_card, text="AÇÕES RÁPIDAS",
+                 font=(_FONT_FAMILY, 11, "bold"), fg=COR_TEXTO2, bg=COR_PAINEL
+                 ).pack(anchor="w", padx=16, pady=(14, 10))
 
-        btn(dir_, "＋  Nova Eleição",
+        btn(dir_card, "＋  Nova Eleição",
             self.app.ir_para_criar_eleicao,
-            cor=COR_VERDE_ESCURO, largura=24
-            ).pack(pady=6, fill="x")
+            cor=COR_VERDE_ESCURO, largura=22
+            ).pack(pady=(0, 8), padx=16, fill="x")
 
-        btn(dir_, "✖  Sair",
+        btn(dir_card, "✖  Sair do Sistema",
             self.app.root.quit,
-            cor="#6E0D0D", largura=24
-            ).pack(pady=6, fill="x")
+            cor="#6E0D0D", largura=22
+            ).pack(pady=(0, 14), padx=16, fill="x")
 
         # Rodapé
         rodape(self)
@@ -462,40 +493,62 @@ class TelaInicial(tk.Frame):
 
         item = tk.Frame(self.lista_frame, bg=COR_PAINEL, cursor="hand2",
                         highlightbackground=COR_BORDA, highlightthickness=1)
-        item.pack(fill="x", pady=4, ipady=6)
+        item.pack(fill="x", pady=3, ipady=8)
 
-        tk.Label(item, text=icone + "  " + info["nome"],
-                 font=FONTE_SUBTITULO, fg=COR_TEXTO, bg=COR_PAINEL,
+        # Linha superior: ícone + nome
+        top = tk.Frame(item, bg=COR_PAINEL)
+        top.pack(fill="x", padx=14, pady=(6, 0))
+
+        tk.Label(top, text=icone + "  " + info["nome"],
+                 font=(_FONT_FAMILY, 13, "bold"), fg=COR_TEXTO, bg=COR_PAINEL,
                  anchor="w"
-                 ).pack(side="left", padx=12, pady=4)
+                 ).pack(side="left")
 
-        tk.Label(item, text=status.upper(),
-                 font=FONTE_STATUS, fg=cor_status, bg=COR_PAINEL
-                 ).pack(side="right", padx=12)
+        tk.Label(top, text=status.upper(),
+                 font=(_FONT_FAMILY, 9, "bold"), fg=cor_status, bg=COR_PAINEL
+                 ).pack(side="right")
 
+        # Linha inferior: stats
         total_chapas = len(info.get("chapas", {}))
         total_votos  = sum(info.get("votos", {}).values())
-        tk.Label(item,
-                 text=f"{total_chapas} chapa(s) · {total_votos} voto(s)",
-                 font=FONTE_PEQUENA, fg=COR_TEXTO2, bg=COR_PAINEL
-                 ).pack(side="right", padx=8)
+
+        bot_line = tk.Frame(item, bg=COR_PAINEL)
+        bot_line.pack(fill="x", padx=14, pady=(2, 6))
+
+        tk.Label(bot_line,
+                 text=f"📋 {total_chapas} chapa(s)   ·   🗳 {total_votos} voto(s)",
+                 font=(_FONT_FAMILY, 9), fg=COR_TEXTO2, bg=COR_PAINEL
+                 ).pack(side="left")
+
+        tk.Label(bot_line, text="▸",
+                 font=(_FONT_FAMILY, 14), fg=COR_TEXTO2, bg=COR_PAINEL
+                 ).pack(side="right")
 
         # Toda a linha é clicável
         def _on_enter(e, frame=item):
-            frame.configure(bg=COR_CINZA2)
+            frame.configure(bg=COR_CINZA2, highlightbackground=COR_AZUL)
             for child in frame.winfo_children():
                 child.configure(bg=COR_CINZA2)
+                for sub in child.winfo_children():
+                    sub.configure(bg=COR_CINZA2)
 
         def _on_leave(e, frame=item):
-            frame.configure(bg=COR_PAINEL)
+            frame.configure(bg=COR_PAINEL, highlightbackground=COR_BORDA)
             for child in frame.winfo_children():
                 child.configure(bg=COR_PAINEL)
+                for sub in child.winfo_children():
+                    sub.configure(bg=COR_PAINEL)
 
         for w in [item] + item.winfo_children():
             w.bind("<Button-1>",
                    lambda e, k=chave: self.app.ir_para_painel(k))
             w.bind("<Enter>", _on_enter)
             w.bind("<Leave>", _on_leave)
+            for sub in w.winfo_children():
+                sub.bind("<Button-1>",
+                         lambda e, k=chave: self.app.ir_para_painel(k))
+                sub.bind("<Enter>", _on_enter)
+                sub.bind("<Leave>", _on_leave)
 
 
 # ════════════════════════════════════════════════════════════════
@@ -514,32 +567,31 @@ class TelaCriarEleicao(tk.Frame):
         self._cabecalho("CRIAR NOVA ELEIÇÃO")
 
         corpo = tk.Frame(self, bg=COR_FUNDO)
-        corpo.pack(fill="both", expand=True, padx=40, pady=20)
+        corpo.pack(fill="both", expand=True, padx=40, pady=24)
 
         c = card(corpo)
-        c.pack(fill="x", pady=8, ipady=12)
+        c.pack(fill="x", pady=8, ipady=16)
 
-        tk.Label(c, text="Nome da Eleição", font=FONTE_SUBTITULO,
+        tk.Label(c, text="Nome da Eleição", font=(_FONT_FAMILY, 14, "bold"),
                  fg=COR_TEXTO, bg=COR_PAINEL
-                 ).pack(anchor="w", padx=16, pady=(12, 4))
+                 ).pack(anchor="w", padx=20, pady=(16, 4))
 
         tk.Label(c, text='Ex: "Líder de Turma 1º Ano A" ou "Grêmio Estudantil"',
-                 font=FONTE_PEQUENA, fg=COR_TEXTO2, bg=COR_PAINEL
-                 ).pack(anchor="w", padx=16, pady=(0, 8))
+                 font=(_FONT_FAMILY, 9), fg=COR_TEXTO2, bg=COR_PAINEL
+                 ).pack(anchor="w", padx=20, pady=(0, 10))
 
         self.entry_nome = tk.Entry(
-            c, font=FONTE_NORMAL, bg=COR_DISPLAY, fg=COR_NUMERO,
+            c, font=(_FONT_FAMILY, 13), bg=COR_DISPLAY, fg=COR_NUMERO,
             insertbackground=COR_NUMERO, relief="flat",
             highlightbackground=COR_VERDE, highlightthickness=1,
             width=42
         )
-        self.entry_nome.pack(padx=16, pady=(0, 12), ipady=8)
+        self.entry_nome.pack(padx=20, pady=(0, 16), ipady=10)
         self.entry_nome.bind("<Return>", lambda e: self._criar())
-
-        separador(corpo).pack(fill="x", pady=12)
+        self.entry_nome.focus_set()
 
         linha = tk.Frame(corpo, bg=COR_FUNDO)
-        linha.pack()
+        linha.pack(pady=(12, 0))
 
         btn(linha, "✔  Criar Eleição", self._criar,
             cor=COR_VERDE_ESCURO, largura=20).pack(side="left", padx=6)
@@ -548,15 +600,15 @@ class TelaCriarEleicao(tk.Frame):
 
         self.lbl_msg = tk.Label(corpo, text="", font=FONTE_NORMAL,
                                 fg=COR_VERMELHO, bg=COR_FUNDO)
-        self.lbl_msg.pack(pady=8)
+        self.lbl_msg.pack(pady=10)
 
     def _cabecalho(self, titulo: str):
-        cab = tk.Frame(self, bg=COR_PAINEL,
-                       highlightbackground=COR_BORDA, highlightthickness=1)
+        cab = tk.Frame(self, bg=COR_HEADER_BG)
         cab.pack(fill="x")
-        tk.Label(cab, text=titulo, font=FONTE_TITULO,
-                 fg=COR_VERDE, bg=COR_PAINEL
-                 ).pack(pady=18)
+        tk.Label(cab, text=titulo, font=(_FONT_FAMILY, 22, "bold"),
+                 fg=COR_VERDE, bg=COR_HEADER_BG
+                 ).pack(pady=(20, 16), padx=32, anchor="w")
+        separador(cab, cor=COR_VERDE).pack(fill="x")
 
     def _criar(self):
         nome = self.entry_nome.get().strip()
@@ -604,90 +656,106 @@ class PainelEleicao(tk.Frame):
         cor_s  = COR_VERDE if status == "aberta" else COR_VERMELHO
 
         # ── Cabeçalho ──────────────────────────────────────────
-        cab = tk.Frame(self, bg=COR_PAINEL,
-                       highlightbackground=COR_BORDA, highlightthickness=1)
+        cab = tk.Frame(self, bg=COR_HEADER_BG)
         cab.pack(fill="x")
 
-        tk.Label(cab, text="🗳  " + eleicao["nome"],
-                 font=FONTE_TITULO, fg=COR_VERDE, bg=COR_PAINEL
-                 ).pack(pady=(18, 2))
+        cab_inner = tk.Frame(cab, bg=COR_HEADER_BG)
+        cab_inner.pack(fill="x", padx=32, pady=(18, 14))
 
-        tk.Label(cab, text=f"STATUS: {status.upper()}",
-                 font=FONTE_STATUS, fg=cor_s, bg=COR_PAINEL
-                 ).pack(pady=(0, 14))
+        tk.Label(cab_inner, text="🗳  " + eleicao["nome"],
+                 font=(_FONT_FAMILY, 22, "bold"), fg=COR_VERDE, bg=COR_HEADER_BG
+                 ).pack(side="left")
+
+        # Badge de status
+        status_badge = tk.Label(cab_inner,
+                 text=f"  {status.upper()}  ",
+                 font=(_FONT_FAMILY, 9, "bold"), fg=COR_TEXTO,
+                 bg=cor_s)
+        status_badge.pack(side="right")
+
+        separador(cab, cor=cor_s).pack(fill="x")
 
         # ── Estatísticas rápidas ────────────────────────────────
         stats = tk.Frame(self, bg=COR_FUNDO)
-        stats.pack(padx=24, pady=12)
+        stats.pack(fill="x", padx=32, pady=(16, 8))
 
         total_chapas = len(eleicao.get("chapas", {}))
         total_votos  = sum(eleicao.get("votos",  {}).values())
 
-        for titulo, valor, cor in [
-            ("Chapas",    str(total_chapas), COR_AZUL),
-            ("Votos",     str(total_votos),  COR_AMARELO),
-            ("Status",    status.capitalize(), cor_s),
+        for titulo, valor, cor, icone in [
+            ("Chapas",  str(total_chapas), COR_AZUL, "📋"),
+            ("Votos",   str(total_votos),  COR_AMARELO, "🗳"),
+            ("Status",  status.capitalize(), cor_s, "⚡"),
         ]:
             f = card(stats)
-            f.pack(side="left", padx=8, ipadx=16, ipady=8)
-            tk.Label(f, text=valor, font=("Courier New", 28, "bold"),
-                     fg=cor, bg=COR_PAINEL).pack()
-            tk.Label(f, text=titulo, font=FONTE_PEQUENA,
-                     fg=COR_TEXTO2, bg=COR_PAINEL).pack()
+            f.pack(side="left", padx=6, fill="x", expand=True)
 
-        separador(self).pack(fill="x", padx=24, pady=4)
+            f_inner = tk.Frame(f, bg=COR_PAINEL)
+            f_inner.pack(fill="x", padx=16, pady=12)
+
+            tk.Label(f_inner, text=icone, font=(_FONT_FAMILY, 22),
+                     fg=cor, bg=COR_PAINEL).pack(side="left", padx=(0, 10))
+
+            txt_f = tk.Frame(f_inner, bg=COR_PAINEL)
+            txt_f.pack(side="left")
+            tk.Label(txt_f, text=valor, font=(_FONT_FAMILY, 22, "bold"),
+                     fg=cor, bg=COR_PAINEL, anchor="w").pack(anchor="w")
+            tk.Label(txt_f, text=titulo.upper(), font=(_FONT_FAMILY, 8, "bold"),
+                     fg=COR_TEXTO2, bg=COR_PAINEL, anchor="w").pack(anchor="w")
+
+        separador(self).pack(fill="x", padx=32, pady=8)
 
         # ── Botões de ação ──────────────────────────────────────
         acoes = tk.Frame(self, bg=COR_FUNDO)
-        acoes.pack(fill="both", expand=True, padx=24, pady=8)
+        acoes.pack(fill="both", expand=True, padx=32, pady=8)
 
         # Linha 1
         l1 = tk.Frame(acoes, bg=COR_FUNDO)
-        l1.pack(pady=6)
+        l1.pack(fill="x", pady=5)
 
         btn(l1, "📋  Cadastrar Chapas",
             lambda: self.app.ir_para_chapas(self.chave),
             cor=COR_AZUL, largura=22
-            ).pack(side="left", padx=8)
+            ).pack(side="left", padx=6, fill="x", expand=True)
 
         btn(l1, "📊  Ver Resultados",
             self._ver_resultados,
             cor=COR_AMARELO, largura=22
-            ).pack(side="left", padx=8)
+            ).pack(side="left", padx=6, fill="x", expand=True)
 
         # Linha 2
         l2 = tk.Frame(acoes, bg=COR_FUNDO)
-        l2.pack(pady=6)
+        l2.pack(fill="x", pady=5)
 
         if status == "fechada":
             btn(l2, "▶  Iniciar Votação",
                 self._iniciar_votacao,
                 cor=COR_VERDE_ESCURO, largura=22
-                ).pack(side="left", padx=8)
+                ).pack(side="left", padx=6, fill="x", expand=True)
         else:
             btn(l2, "⬛  Encerrar Votação",
                 self._encerrar_votacao,
                 cor=COR_VERMELHO, largura=22
-                ).pack(side="left", padx=8)
+                ).pack(side="left", padx=6, fill="x", expand=True)
 
         btn(l2, "🗳  Abrir Urna",
             lambda: self.app.ir_para_urna(self.chave),
             cor="#8957e5", largura=22
-            ).pack(side="left", padx=8)
+            ).pack(side="left", padx=6, fill="x", expand=True)
 
         # Linha 3
         l3 = tk.Frame(acoes, bg=COR_FUNDO)
-        l3.pack(pady=6)
+        l3.pack(fill="x", pady=5)
 
         btn(l3, "🗑  Excluir Eleição",
             self._excluir_eleicao,
             cor="#6E0D0D", largura=22
-            ).pack(side="left", padx=8)
+            ).pack(side="left", padx=6, fill="x", expand=True)
 
         btn(l3, "← Voltar",
             self.app.ir_para_tela_inicial,
             cor=COR_CINZA, largura=22
-            ).pack(side="left", padx=8)
+            ).pack(side="left", padx=6, fill="x", expand=True)
 
     # ─── ações ─────────────────────────────────────────────────
     def _ver_resultados(self):
@@ -757,16 +825,25 @@ class TelaCadastroChapas(tk.Frame):
         eleicao = GerenciadorDados.obter_eleicao(self.chave)
 
         # ── Cabeçalho ──────────────────────────────────────────
-        cab = tk.Frame(self, bg=COR_PAINEL,
-                       highlightbackground=COR_BORDA, highlightthickness=1)
+        cab = tk.Frame(self, bg=COR_HEADER_BG)
         cab.pack(fill="x")
-        tk.Label(cab, text="📋  CADASTRO DE CHAPAS — " + eleicao["nome"],
-                 font=FONTE_SUBTITULO, fg=COR_VERDE, bg=COR_PAINEL
-                 ).pack(pady=14)
 
-        btn(cab, "← Painel", lambda: self.app.ir_para_painel(self.chave),
-            cor=COR_CINZA, largura=14, altura=1
-            ).pack(side="right", padx=16, pady=10)
+        cab_inner = tk.Frame(cab, bg=COR_HEADER_BG)
+        cab_inner.pack(fill="x", padx=28, pady=(14, 12))
+
+        tk.Label(cab_inner, text="📋  CADASTRO DE CHAPAS",
+                 font=(_FONT_FAMILY, 18, "bold"), fg=COR_VERDE, bg=COR_HEADER_BG
+                 ).pack(side="left")
+
+        tk.Label(cab_inner, text=eleicao["nome"],
+                 font=(_FONT_FAMILY, 11), fg=COR_TEXTO2, bg=COR_HEADER_BG
+                 ).pack(side="left", padx=(12, 0), pady=(4, 0))
+
+        btn(cab_inner, "← Painel", lambda: self.app.ir_para_painel(self.chave),
+            cor=COR_CINZA, largura=12, altura=1
+            ).pack(side="right")
+
+        separador(cab, cor=COR_VERDE).pack(fill="x")
 
         # ── Corpo ───────────────────────────────────────────────
         corpo = tk.Frame(self, bg=COR_FUNDO)
@@ -986,25 +1063,40 @@ class TelaUrna(tk.Frame):
         eleicao = GerenciadorDados.obter_eleicao(self.chave)
 
         # ── Cabeçalho ──────────────────────────────────────────
-        cab = tk.Frame(self, bg=COR_PAINEL,
-                       highlightbackground=COR_BORDA, highlightthickness=1)
+        cab = tk.Frame(self, bg=COR_HEADER_BG)
         cab.pack(fill="x")
-        tk.Label(cab, text="🗳  URNA ELETRÔNICA — " + eleicao["nome"],
-                 font=FONTE_SUBTITULO, fg=COR_VERDE, bg=COR_PAINEL
-                 ).pack(pady=12)
 
-        btn(cab, "← Painel", lambda: self.app.ir_para_painel(self.chave),
+        cab_inner = tk.Frame(cab, bg=COR_HEADER_BG)
+        cab_inner.pack(fill="x", padx=28, pady=(14, 12))
+
+        tk.Label(cab_inner, text="🗳  URNA ELETRÔNICA",
+                 font=(_FONT_FAMILY, 18, "bold"), fg=COR_VERDE, bg=COR_HEADER_BG
+                 ).pack(side="left")
+
+        tk.Label(cab_inner, text=eleicao["nome"],
+                 font=(_FONT_FAMILY, 11), fg=COR_TEXTO2, bg=COR_HEADER_BG
+                 ).pack(side="left", padx=(12, 0), pady=(4, 0))
+
+        btn(cab_inner, "← Painel", lambda: self.app.ir_para_painel(self.chave),
             cor=COR_CINZA, largura=12, altura=1
-            ).pack(side="right", padx=16, pady=10)
+            ).pack(side="right")
+
+        separador(cab, cor=COR_VERDE).pack(fill="x")
 
         # ── Bloquear se fechada ─────────────────────────────────
         if eleicao.get("status") != "aberta":
-            tk.Label(self,
-                     text="⛔  VOTAÇÃO ENCERRADA\n\n"
-                          "Inicie a votação no painel antes de usar a urna.",
-                     font=FONTE_SUBTITULO, fg=COR_VERMELHO, bg=COR_FUNDO,
-                     justify="center"
-                     ).pack(expand=True)
+            bloq = tk.Frame(self, bg=COR_FUNDO)
+            bloq.pack(expand=True)
+            tk.Label(bloq, text="⛔", font=(_FONT_FAMILY, 48),
+                     fg=COR_VERMELHO, bg=COR_FUNDO).pack(pady=(0, 8))
+            tk.Label(bloq,
+                     text="VOTAÇÃO ENCERRADA",
+                     font=(_FONT_FAMILY, 18, "bold"), fg=COR_VERMELHO, bg=COR_FUNDO
+                     ).pack()
+            tk.Label(bloq,
+                     text="Inicie a votação no painel antes de usar a urna.",
+                     font=(_FONT_FAMILY, 11), fg=COR_TEXTO2, bg=COR_FUNDO
+                     ).pack(pady=(6, 0))
             return
 
         # ── Determinar tamanho máximo de dígitos ─────────────────
@@ -1023,7 +1115,7 @@ class TelaUrna(tk.Frame):
 
         tk.Label(esq,
                  text="DIGITE O NÚMERO DA CHAPA",
-                 font=("Courier New", 12, "bold"),
+                 font=(_FONT_FAMILY, 12, "bold"),
                  fg=COR_TEXTO2, bg=COR_FUNDO
                  ).pack(pady=(0, 8))
 
@@ -1069,31 +1161,36 @@ class TelaUrna(tk.Frame):
                         activebackground=COR_CINZA2,
                         command=lambda d=digito: self._digitar(d)
                     )
+                    _hover(b, COR_CINZA, COR_CINZA2)
                     b.pack(side="left", padx=4, pady=4)
 
         linha_btn = tk.Frame(esq, bg=COR_FUNDO)
         linha_btn.pack(pady=10)
 
-        tk.Button(
+        corrigir_btn = tk.Button(
             linha_btn, text="CORRIGIR",
-            font=FONTE_BOTAO, bg=COR_AMARELO, fg=COR_FUNDO,
+            font=FONTE_BOTAO, bg=COR_LARANJA, fg="#FFFFFF",
             width=14, height=2, relief="flat", cursor="hand2",
-            activebackground="#b07e00",
+            activebackground="#CC7000",
             command=self._corrigir
-        ).pack(side="left", padx=10)
+        )
+        _hover(corrigir_btn, COR_LARANJA, "#CC7000")
+        corrigir_btn.pack(side="left", padx=10)
 
-        tk.Button(
+        confirmar_btn = tk.Button(
             linha_btn, text="CONFIRMAR",
             font=FONTE_BOTAO, bg=COR_VERDE_ESCURO, fg=COR_TEXTO,
             width=14, height=2, relief="flat", cursor="hand2",
-            activebackground="#1a6e2a",
+            activebackground="#1A6E2A",
             command=self._confirmar
-        ).pack(side="left", padx=10)
+        )
+        _hover(confirmar_btn, COR_VERDE_ESCURO, "#2FC24E")
+        confirmar_btn.pack(side="left", padx=10)
 
         # ── Lado direito: info da chapa ──
         self._fotos_refs = []
 
-        self.painel_dir = tk.Frame(corpo, bg=COR_PAINEL, width=280,
+        self.painel_dir = tk.Frame(corpo, bg=COR_PAINEL, width=400,
                                    highlightbackground=COR_BORDA,
                                    highlightthickness=1)
         self.painel_dir.pack(side="left", fill="y", padx=(24, 0))
@@ -1195,38 +1292,38 @@ class TelaUrna(tk.Frame):
         self._limpar_info()
 
         tk.Label(self.info_container, text=f"Chapa {self.digitos}",
-                 font=FONTE_SUBTITULO, fg=COR_AMARELO, bg=COR_PAINEL
-                 ).pack(pady=(20, 12))
+                 font=(_FONT_FAMILY, 18, "bold"), fg=COR_AMARELO, bg=COR_PAINEL
+                 ).pack(pady=(16, 10))
 
         # Líder
-        img1 = _carregar_foto(fotos[0], (90, 90))
+        img1 = _carregar_foto(fotos[0], (140, 140))
         if img1:
             self._fotos_refs.append(img1)
             tk.Label(self.info_container, image=img1,
-                     bg=COR_PAINEL).pack(pady=(0, 2))
+                     bg=COR_PAINEL).pack(pady=(0, 4))
         tk.Label(self.info_container, text="LÍDER",
-                 font=FONTE_STATUS, fg=COR_VERDE, bg=COR_PAINEL).pack()
+                 font=(_FONT_FAMILY, 10, "bold"), fg=COR_VERDE, bg=COR_PAINEL).pack()
         tk.Label(self.info_container, text=nomes[0],
-                 font=FONTE_NORMAL, fg=COR_TEXTO, bg=COR_PAINEL
-                 ).pack(pady=(0, 12))
+                 font=(_FONT_FAMILY, 12), fg=COR_TEXTO, bg=COR_PAINEL
+                 ).pack(pady=(0, 14))
 
         # Vice-Líder
-        img2 = _carregar_foto(fotos[1], (90, 90))
+        img2 = _carregar_foto(fotos[1], (140, 140))
         if img2:
             self._fotos_refs.append(img2)
             tk.Label(self.info_container, image=img2,
-                     bg=COR_PAINEL).pack(pady=(0, 2))
+                     bg=COR_PAINEL).pack(pady=(0, 4))
         tk.Label(self.info_container, text="VICE-LÍDER",
-                 font=FONTE_STATUS, fg=COR_AZUL, bg=COR_PAINEL).pack()
+                 font=(_FONT_FAMILY, 10, "bold"), fg=COR_AZUL, bg=COR_PAINEL).pack()
         tk.Label(self.info_container, text=nomes[1],
-                 font=FONTE_NORMAL, fg=COR_TEXTO, bg=COR_PAINEL).pack()
+                 font=(_FONT_FAMILY, 12), fg=COR_TEXTO, bg=COR_PAINEL).pack()
 
     def _mostrar_mensagem_painel(self, texto, cor):
         """Exibe mensagem no painel direito."""
         self._limpar_info()
         tk.Label(self.info_container, text=texto,
-                 font=FONTE_SUBTITULO, fg=cor, bg=COR_PAINEL,
-                 wraplength=240, justify="center"
+                 font=(_FONT_FAMILY, 15, "bold"), fg=cor, bg=COR_PAINEL,
+                 wraplength=360, justify="center"
                  ).pack(expand=True)
 
     def _mostrar_erro(self):
@@ -1277,16 +1374,25 @@ class TelaResultados(tk.Frame):
         eleicao = GerenciadorDados.obter_eleicao(self.chave)
 
         # ── Cabeçalho ──────────────────────────────────────────
-        cab = tk.Frame(self, bg=COR_PAINEL,
-                       highlightbackground=COR_BORDA, highlightthickness=1)
+        cab = tk.Frame(self, bg=COR_HEADER_BG)
         cab.pack(fill="x")
-        tk.Label(cab, text="📊  RESULTADOS — " + eleicao["nome"],
-                 font=FONTE_SUBTITULO, fg=COR_AMARELO, bg=COR_PAINEL
-                 ).pack(pady=12)
 
-        btn(cab, "← Painel", lambda: self.app.ir_para_painel(self.chave),
+        cab_inner = tk.Frame(cab, bg=COR_HEADER_BG)
+        cab_inner.pack(fill="x", padx=28, pady=(14, 12))
+
+        tk.Label(cab_inner, text="📊  RESULTADOS",
+                 font=(_FONT_FAMILY, 18, "bold"), fg=COR_AMARELO, bg=COR_HEADER_BG
+                 ).pack(side="left")
+
+        tk.Label(cab_inner, text=eleicao["nome"],
+                 font=(_FONT_FAMILY, 11), fg=COR_TEXTO2, bg=COR_HEADER_BG
+                 ).pack(side="left", padx=(12, 0), pady=(4, 0))
+
+        btn(cab_inner, "← Painel", lambda: self.app.ir_para_painel(self.chave),
             cor=COR_CINZA, largura=12, altura=1
-            ).pack(side="right", padx=16, pady=10)
+            ).pack(side="right")
+
+        separador(cab, cor=COR_AMARELO).pack(fill="x")
 
         # ── Verificar se eleição está fechada ──────────────────
         if eleicao.get("status") == "aberta":
@@ -1346,48 +1452,48 @@ class TelaResultados(tk.Frame):
             info_v = chapas[vencedor]
             nomes_v = _chapa_nomes(info_v)
             fotos_v = _chapa_fotos(info_v)
-            banner = tk.Frame(inner, bg="#1e2d0e",
+            banner = tk.Frame(inner, bg="#162B0A",
                               highlightbackground=COR_VERDE,
                               highlightthickness=2)
-            banner.pack(fill="x", pady=8, ipady=10)
+            banner.pack(fill="x", pady=(0, 12), ipady=10)
 
             tk.Label(banner, text="🏆  CHAPA VENCEDORA",
-                     font=("Courier New", 13, "bold"),
-                     fg=COR_VERDE, bg="#1e2d0e"
-                     ).pack(pady=(8, 4))
+                     font=(_FONT_FAMILY, 15, "bold"),
+                     fg=COR_AMARELO, bg="#162B0A"
+                     ).pack(pady=(12, 8))
 
             # Fotos dos vencedores
-            fotos_frame = tk.Frame(banner, bg="#1e2d0e")
+            fotos_frame = tk.Frame(banner, bg="#162B0A")
             fotos_frame.pack(pady=4)
             for i, (caminho, cargo) in enumerate(
                     zip(fotos_v, ["LÍDER", "VICE-LÍDER"])):
-                col = tk.Frame(fotos_frame, bg="#1e2d0e")
-                col.pack(side="left", padx=16)
+                col = tk.Frame(fotos_frame, bg="#162B0A")
+                col.pack(side="left", padx=24)
                 img = _carregar_foto(caminho, (100, 100))
                 if img:
                     self._fotos_refs.append(img)
-                    tk.Label(col, image=img, bg="#1e2d0e").pack()
-                tk.Label(col, text=cargo, font=FONTE_STATUS,
-                         fg=COR_VERDE if cargo == "LÍDER" else COR_AZUL,  # VICE-LÍDER usa azul
-                         bg="#1e2d0e").pack()
-                tk.Label(col, text=nomes_v[i], font=FONTE_NORMAL,
-                         fg=COR_TEXTO, bg="#1e2d0e").pack()
+                    tk.Label(col, image=img, bg="#162B0A").pack()
+                tk.Label(col, text=cargo, font=(_FONT_FAMILY, 9, "bold"),
+                         fg=COR_VERDE if cargo == "LÍDER" else COR_AZUL,
+                         bg="#162B0A").pack(pady=(4, 0))
+                tk.Label(col, text=nomes_v[i], font=(_FONT_FAMILY, 12),
+                         fg=COR_TEXTO, bg="#162B0A").pack()
 
             tk.Label(banner,
                      text=f"Chapa {vencedor}",
-                     font=("Courier New", 15, "bold"),
-                     fg=COR_AMARELO, bg="#1e2d0e"
-                     ).pack()
+                     font=(_FONT_FAMILY, 16, "bold"),
+                     fg=COR_AMARELO, bg="#162B0A"
+                     ).pack(pady=(8, 0))
             tk.Label(banner,
                      text=f"{votos.get(vencedor, 0)} votos  "
                           f"({_pct(votos.get(vencedor, 0), total_validos):.1f}%)",
-                     font=FONTE_SUBTITULO, fg=COR_VERDE, bg="#1e2d0e"
-                     ).pack(pady=(2, 8))
+                     font=(_FONT_FAMILY, 13, "bold"), fg=COR_VERDE, bg="#162B0A"
+                     ).pack(pady=(2, 10))
 
         elif empate and total_validos > 0:
             tk.Label(inner, text="⚖  EMPATE — Nenhuma chapa tem maioria",
-                     font=FONTE_SUBTITULO, fg=COR_AMARELO, bg=COR_FUNDO
-                     ).pack(pady=8)
+                     font=(_FONT_FAMILY, 14, "bold"), fg=COR_AMARELO, bg=COR_FUNDO
+                     ).pack(pady=10)
 
         # ── Tabela de resultados ────────────────────────────────
         tk.Label(inner, text="APURAÇÃO GERAL",
@@ -1405,58 +1511,58 @@ class TelaResultados(tk.Frame):
             pct     = _pct(qv, total_validos) if total_validos else 0
             is_win  = (numero == vencedor and not empate and total_validos > 0)
 
-            cor_card = "#1e2d0e" if is_win else COR_PAINEL
+            cor_card = "#162B0A" if is_win else COR_PAINEL
             cor_bord = COR_VERDE if is_win else COR_BORDA
 
             linha = tk.Frame(inner, bg=cor_card,
                              highlightbackground=cor_bord,
                              highlightthickness=1)
-            linha.pack(fill="x", pady=3, ipady=6)
+            linha.pack(fill="x", pady=3, ipady=8)
 
             icone = "🥇 " if is_win else "   "
             tk.Label(linha, text=f"{icone}Chapa {numero}",
-                     font=FONTE_BOTAO, fg=COR_AMARELO if is_win else COR_TEXTO,
-                     bg=cor_card, width=12, anchor="w"
-                     ).pack(side="left", padx=12)
+                     font=(_FONT_FAMILY, 12, "bold"), fg=COR_AMARELO if is_win else COR_TEXTO,
+                     bg=cor_card, width=14, anchor="w"
+                     ).pack(side="left", padx=14)
 
             tk.Label(linha, text=f"{nomes[0]}  ·  {nomes[1]}",
-                     font=FONTE_NORMAL, fg=COR_TEXTO, bg=cor_card, width=36, anchor="w"
+                     font=(_FONT_FAMILY, 11), fg=COR_TEXTO, bg=cor_card, width=34, anchor="w"
                      ).pack(side="left", padx=4)
 
             # Barra de progresso
             bar_frame = tk.Frame(linha, bg=cor_card)
             bar_frame.pack(side="left", fill="x", expand=True, padx=12)
 
-            bar_total = tk.Frame(bar_frame, bg=COR_BORDA, height=14)
+            bar_total = tk.Frame(bar_frame, bg=COR_BORDA, height=18)
             bar_total.pack(fill="x", pady=4)
             bar_total.update_idletasks()
 
             if pct > 0:
                 bar_fill = tk.Frame(bar_total,
                                     bg=COR_VERDE if is_win else COR_AZUL,
-                                    height=14)
+                                    height=18)
                 bar_fill.place(relwidth=pct/100, relheight=1)
 
             tk.Label(linha, text=f"{qv} votos  ({pct:.1f}%)",
-                     font=FONTE_NORMAL, fg=COR_VERDE if is_win else COR_TEXTO,
+                     font=(_FONT_FAMILY, 11, "bold"), fg=COR_VERDE if is_win else COR_TEXTO,
                      bg=cor_card, width=18, anchor="e"
-                     ).pack(side="right", padx=12)
+                     ).pack(side="right", padx=14)
 
         # ── Rodapé com totais ───────────────────────────────────
-        separador(inner).pack(fill="x", pady=10)
+        separador(inner).pack(fill="x", pady=12)
 
         totais = tk.Frame(inner, bg=COR_FUNDO)
-        totais.pack()
+        totais.pack(pady=(0, 10))
 
         for label_txt, valor, cor in [
             ("Total de votos válidos:", str(total_validos), COR_VERDE),
             ("Total geral de votos:",   str(total_geral),   COR_TEXTO),
         ]:
             tk.Label(totais, text=label_txt,
-                     font=FONTE_NORMAL, fg=COR_TEXTO2, bg=COR_FUNDO
+                     font=(_FONT_FAMILY, 11), fg=COR_TEXTO2, bg=COR_FUNDO
                      ).pack(side="left", padx=12)
             tk.Label(totais, text=valor,
-                     font=FONTE_SUBTITULO, fg=cor, bg=COR_FUNDO
+                     font=(_FONT_FAMILY, 14, "bold"), fg=cor, bg=COR_FUNDO
                      ).pack(side="left", padx=(0, 24))
 
 
