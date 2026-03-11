@@ -333,15 +333,20 @@ class App:
     def __init__(self):
         self.root = tk.Tk()
         self.root.title("Urna Escolar — Sistema de Votação")
-        self.root.geometry("960x720")
-        self.root.minsize(860, 640)
+        # Adapta tamanho da janela à tela disponível
+        screen_w = self.root.winfo_screenwidth()
+        screen_h = self.root.winfo_screenheight()
+        win_w = min(960, screen_w - 40)
+        win_h = min(720, screen_h - 80)
+        self.root.geometry(f"{win_w}x{win_h}")
+        self.root.minsize(min(860, win_w), min(640, win_h))
         self.root.configure(bg=COR_FUNDO)
 
         # Centraliza a janela na tela
         self.root.update_idletasks()
-        x = (self.root.winfo_screenwidth()  - 960) // 2
-        y = (self.root.winfo_screenheight() - 720) // 2
-        self.root.geometry(f"960x720+{x}+{y}")
+        x = (screen_w - win_w) // 2
+        y = (screen_h - win_h) // 2
+        self.root.geometry(f"{win_w}x{win_h}+{x}+{y}")
 
         self._tela_atual = None
         self.ir_para_tela_inicial()
@@ -1105,37 +1110,65 @@ class TelaUrna(tk.Frame):
             max_num = max(len(n) for n in chapas.keys())
             self.MAX_DIGITOS = max_num
 
+        # ── Escala responsiva baseada na altura da janela ────────
+        self.update_idletasks()
+        root = self.winfo_toplevel()
+        win_h = root.winfo_height()
+        if win_h < 100:
+            win_h = root.winfo_screenheight() - 80
+        scale = min(1.0, win_h / 720)
+        self._scale = scale
+
+        # Fontes escaladas
+        _disp_font_sz = max(18, int(42 * scale))
+        _num_font_sz  = max(11, int(16 * scale))
+        _lbl_font_sz  = max(9,  int(12 * scale))
+        _btn_font_sz  = max(9,  int(11 * scale))
+
+        # Dimensões escaladas
+        _disp_h   = 2 if scale >= 0.9 else 1
+        _disp_pad = max(4, int(10 * scale))
+        _btn_w    = max(3, int(4 * scale))
+        _btn_h    = 2 if scale >= 0.85 else 1
+        _spacer   = max(36, int(72 * scale))
+        _act_w    = max(10, int(14 * scale))
+        _act_h    = 2 if scale >= 0.85 else 1
+        _panel_w  = max(220, int(400 * scale))
+        _pad_sm   = max(2, int(4 * scale))
+        _pad_md   = max(3, int(8 * scale))
+        _pad_lg   = max(4, int(12 * scale))
+
         # ── Layout horizontal: esquerda=urna, direita=info ─────
         corpo = tk.Frame(self, bg=COR_FUNDO)
-        corpo.pack(expand=True, pady=12)
+        corpo.pack(expand=True, pady=_pad_lg)
 
         # ── Lado esquerdo: visor + teclado ──
         esq = tk.Frame(corpo, bg=COR_FUNDO)
-        esq.pack(side="left", padx=(0, 24))
+        esq.pack(side="left", padx=(0, _pad_lg * 2))
 
         tk.Label(esq,
                  text="DIGITE O NÚMERO DA CHAPA",
-                 font=(_FONT_FAMILY, 12, "bold"),
+                 font=(_FONT_FAMILY, _lbl_font_sz, "bold"),
                  fg=COR_TEXTO2, bg=COR_FUNDO
-                 ).pack(pady=(0, 8))
+                 ).pack(pady=(0, _pad_md))
 
         visor_frame = tk.Frame(esq, bg=COR_DISPLAY,
                                highlightbackground=COR_VERDE,
                                highlightthickness=2)
-        visor_frame.pack(pady=4)
+        visor_frame.pack(pady=_pad_sm)
 
         self.lbl_display = tk.Label(
             visor_frame,
             text="",
-            font=FONTE_DISPLAY,
+            font=(_FONT_MONO, _disp_font_sz, "bold"),
             fg=COR_NUMERO, bg=COR_DISPLAY,
-            width=8, height=2,
+            width=8, height=_disp_h,
             anchor="center"
         )
-        self.lbl_display.pack(padx=20, pady=10)
+        self.lbl_display.pack(padx=_disp_pad * 2, pady=_disp_pad)
 
         teclado = tk.Frame(esq, bg=COR_FUNDO)
-        teclado.pack(pady=8)
+        teclado.pack(pady=_pad_md)
 
         layout = [
             ["1", "2", "3"],
@@ -1149,51 +1182,53 @@ class TelaUrna(tk.Frame):
             fr.pack()
             for digito in linha:
                 if digito == "":
-                    tk.Frame(fr, width=72, height=72, bg=COR_FUNDO
-                             ).pack(side="left", padx=4, pady=4)
+                    tk.Frame(fr, width=_spacer, height=_spacer, bg=COR_FUNDO
+                             ).pack(side="left", padx=_pad_sm, pady=_pad_sm)
                 else:
                     b = tk.Button(
                         fr, text=digito,
-                        font=FONTE_BOTAO_NUM,
+                        font=(_FONT_FAMILY, _num_font_sz, "bold"),
                         bg=COR_CINZA, fg=COR_TEXTO,
-                        width=4, height=2,
+                        width=_btn_w, height=_btn_h,
                         relief="flat", cursor="hand2",
                         activebackground=COR_CINZA2,
                         command=lambda d=digito: self._digitar(d)
                     )
                     _hover(b, COR_CINZA, COR_CINZA2)
-                    b.pack(side="left", padx=4, pady=4)
+                    b.pack(side="left", padx=_pad_sm, pady=_pad_sm)
 
         linha_btn = tk.Frame(esq, bg=COR_FUNDO)
-        linha_btn.pack(pady=10)
+        linha_btn.pack(pady=_pad_md)
 
         corrigir_btn = tk.Button(
             linha_btn, text="CORRIGIR",
-            font=FONTE_BOTAO, bg=COR_LARANJA, fg="#FFFFFF",
-            width=14, height=2, relief="flat", cursor="hand2",
+            font=(_FONT_FAMILY, _btn_font_sz, "bold"),
+            bg=COR_LARANJA, fg="#FFFFFF",
+            width=_act_w, height=_act_h, relief="flat", cursor="hand2",
             activebackground="#CC7000",
             command=self._corrigir
         )
         _hover(corrigir_btn, COR_LARANJA, "#CC7000")
-        corrigir_btn.pack(side="left", padx=10)
+        corrigir_btn.pack(side="left", padx=_pad_md)
 
         confirmar_btn = tk.Button(
             linha_btn, text="CONFIRMAR",
-            font=FONTE_BOTAO, bg=COR_VERDE_ESCURO, fg=COR_TEXTO,
-            width=14, height=2, relief="flat", cursor="hand2",
+            font=(_FONT_FAMILY, _btn_font_sz, "bold"),
+            bg=COR_VERDE_ESCURO, fg=COR_TEXTO,
+            width=_act_w, height=_act_h, relief="flat", cursor="hand2",
             activebackground="#1A6E2A",
             command=self._confirmar
         )
         _hover(confirmar_btn, COR_VERDE_ESCURO, "#2FC24E")
-        confirmar_btn.pack(side="left", padx=10)
+        confirmar_btn.pack(side="left", padx=_pad_md)
 
         # ── Lado direito: info da chapa ──
         self._fotos_refs = []
 
-        self.painel_dir = tk.Frame(corpo, bg=COR_PAINEL, width=400,
+        self.painel_dir = tk.Frame(corpo, bg=COR_PAINEL, width=_panel_w,
                                    highlightbackground=COR_BORDA,
                                    highlightthickness=1)
-        self.painel_dir.pack(side="left", fill="y", padx=(24, 0))
+        self.painel_dir.pack(side="left", fill="y", padx=(_pad_lg * 2, 0))
         self.painel_dir.pack_propagate(False)
 
         self.info_container = tk.Frame(self.painel_dir, bg=COR_PAINEL)
@@ -1290,33 +1325,38 @@ class TelaUrna(tk.Frame):
     def _mostrar_info_chapa(self, nomes, fotos):
         """Exibe detalhes da chapa no painel direito."""
         self._limpar_info()
+        s = getattr(self, '_scale', 1.0)
+        _foto_sz = max(60, int(140 * s))
+        _titulo_sz = max(12, int(18 * s))
+        _nome_sz = max(9, int(12 * s))
+        _cargo_sz = max(8, int(10 * s))
 
         tk.Label(self.info_container, text=f"Chapa {self.digitos}",
-                 font=(_FONT_FAMILY, 18, "bold"), fg=COR_AMARELO, bg=COR_PAINEL
-                 ).pack(pady=(16, 10))
+                 font=(_FONT_FAMILY, _titulo_sz, "bold"), fg=COR_AMARELO, bg=COR_PAINEL
+                 ).pack(pady=(max(4, int(16 * s)), max(4, int(10 * s))))
 
         # Líder
-        img1 = _carregar_foto(fotos[0], (140, 140))
+        img1 = _carregar_foto(fotos[0], (_foto_sz, _foto_sz))
         if img1:
             self._fotos_refs.append(img1)
             tk.Label(self.info_container, image=img1,
-                     bg=COR_PAINEL).pack(pady=(0, 4))
+                     bg=COR_PAINEL).pack(pady=(0, 2))
         tk.Label(self.info_container, text="LÍDER",
-                 font=(_FONT_FAMILY, 10, "bold"), fg=COR_VERDE, bg=COR_PAINEL).pack()
+                 font=(_FONT_FAMILY, _cargo_sz, "bold"), fg=COR_VERDE, bg=COR_PAINEL).pack()
         tk.Label(self.info_container, text=nomes[0],
-                 font=(_FONT_FAMILY, 12), fg=COR_TEXTO, bg=COR_PAINEL
-                 ).pack(pady=(0, 14))
+                 font=(_FONT_FAMILY, _nome_sz), fg=COR_TEXTO, bg=COR_PAINEL
+                 ).pack(pady=(0, max(4, int(14 * s))))
 
         # Vice-Líder
-        img2 = _carregar_foto(fotos[1], (140, 140))
+        img2 = _carregar_foto(fotos[1], (_foto_sz, _foto_sz))
         if img2:
             self._fotos_refs.append(img2)
             tk.Label(self.info_container, image=img2,
-                     bg=COR_PAINEL).pack(pady=(0, 4))
+                     bg=COR_PAINEL).pack(pady=(0, 2))
         tk.Label(self.info_container, text="VICE-LÍDER",
-                 font=(_FONT_FAMILY, 10, "bold"), fg=COR_AZUL, bg=COR_PAINEL).pack()
+                 font=(_FONT_FAMILY, _cargo_sz, "bold"), fg=COR_AZUL, bg=COR_PAINEL).pack()
         tk.Label(self.info_container, text=nomes[1],
-                 font=(_FONT_FAMILY, 12), fg=COR_TEXTO, bg=COR_PAINEL).pack()
+                 font=(_FONT_FAMILY, _nome_sz), fg=COR_TEXTO, bg=COR_PAINEL).pack()
 
     def _mostrar_mensagem_painel(self, texto, cor):
         """Exibe mensagem no painel direito."""
